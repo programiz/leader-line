@@ -1110,9 +1110,14 @@
       svg.style.visibility = 'hidden';
     }
 
-    baseDocument.body.appendChild(svg);
+    var elementFromParent = props.options.customElement;
 
-    // label (after appendChild(svg), bBox is used)
+    if(elementFromParent !== null) { 
+      elementFromParent.appendChild(svg)
+    } else {
+      baseDocument.body.appendChild(svg);
+    }
+    
     [0, 1, 2].forEach(function(i) {
       var label = props.options.labelSEM[i], attachProps;
       if (label && isAttachment(label, 'label')) {
@@ -2500,7 +2505,8 @@
       plugOutlineEnabledSE    startPlugOutline, endPlugOutline
       plugOutlineColorSE      startPlugOutlineColor, endPlugOutlineColor
       plugOutlineSizeSE       startPlugOutlineSize, endPlugOutlineSize
-      labelSEM                startLabel, endLabel, middleLabel
+      labelSEM                startLabel, endLabel, middleLabelanchorSE 
+      'customElement'         string
     */
     var options = props.options,
       newWindow, needsWindow, needs = {};
@@ -2679,6 +2685,18 @@
         null, 'plugOutlineSizeSE', i, DEFAULT_OPTIONS.plugOutlineSizeSE[i],
         function(value) { return value >= 1; }) || needs.plugOutline;
     });
+
+    // CustomElement (HTMLElement)
+    needs.custom = setValidType(
+      options,              // target object where we store
+      newOptions,           // input options
+      'customElement',      // property name in newOptions
+      'string',             // expected JS type
+      null,                 // internal option name (null means same as propName)
+      null,                 // index (not needed)
+      null,                 // default value (no default)
+    function(value) { return value instanceof HTMLElement; } // extra validation
+    ) || needs.custom;
 
     // label
     ['startLabel', 'endLabel', 'middleLabel'].forEach(function(optionName, i) {
@@ -3349,11 +3367,11 @@
    * @param {Element} [end] - Alternative to `options.end`.
    * @param {Object} [options] - Initial options.
    */
-  function LeaderLine(start, end, options) {
+  function LeaderLine(start, end, customElement, options) {
     var props = {
       // Initialize properties as array.
       options: {anchorSE: [], socketSE: [], socketGravitySE: [], plugSE: [], plugColorSE: [], plugSizeSE: [],
-        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', '']},
+        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', ''], customElement: null},
       optionIsAttach: {anchorSE: [false, false], labelSEM: [false, false, false]},
       curStats: {}, aplStats: {}, attachments: [], events: {}, reflowTargets: []
     };
@@ -3385,8 +3403,14 @@
       if (start) { options.start = start; }
       if (end) { options.end = end; }
     }
+
+    if(customElement !== null) {
+      options = copyTree(options);
+      options.customElement = customElement;
+    }
     props.isShown = props.aplStats.show_on = !options.hide; // isShown is applied in setOptions -> bindWindow
     this.setOptions(options);
+
   }
 
   (function() {
@@ -3432,7 +3456,7 @@
           get: function() {
             var value = // Don't use closure.
                 i != null ? insProps[this._id].options[optionName][i] :
-                optionName ? insProps[this._id].options[optionName] :
+              optionName ? insProps[this._id].options[optionName] :
                 insProps[this._id].options[propName],
               key;
             return !value ? KEYWORD_AUTO :
@@ -3773,7 +3797,9 @@
         attachProps.path.style.fill = attachProps.fill || 'none';
         attachProps.isShown = false;
         svg.style.visibility = 'hidden';
+
         baseDocument.body.appendChild(svg);
+
         setupWindow((window = baseDocument.defaultView));
         attachProps.bodyOffset = getBodyOffset(window); // Get `bodyOffset`
 
