@@ -1,0 +1,38 @@
+#container {
+  width: 480px;
+  height: 480px;
+  position: relative;
+  background-color: beige;
+}
+
+.terminal {
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  background-color: blue;
+}
+
+#terminal-1 {
+  left: 32px;
+  top: 32px;
+}
+
+#terminal-2 {
+  left: 416px;
+  top: 320px;
+}
+
+#terminal-3 {
+  left: 64px;
+  top: 180px;
+}
+
+
+.leader-line{
+  z-index: 1;
+}
+
+
+#line-wrapper { 
+  margin: 20px;
+}
