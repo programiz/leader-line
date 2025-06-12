@@ -1109,10 +1109,9 @@
     } else if (!props.isShown) {
       svg.style.visibility = 'hidden';
     }
-
-    var elementFromParent = props.options.customElement;
-
-    if(elementFromParent !== null) { 
+    
+    if(props.options.customElement.length > 0) { 
+      var elementFromParent = document.getElementById(props.options.customElement);
       elementFromParent.appendChild(svg)
     } else {
       baseDocument.body.appendChild(svg);
@@ -2506,7 +2505,6 @@
       plugOutlineColorSE      startPlugOutlineColor, endPlugOutlineColor
       plugOutlineSizeSE       startPlugOutlineSize, endPlugOutlineSize
       labelSEM                startLabel, endLabel, middleLabelanchorSE 
-      'customElement'         string
     */
     var options = props.options,
       newWindow, needsWindow, needs = {};
@@ -2686,17 +2684,6 @@
         function(value) { return value >= 1; }) || needs.plugOutline;
     });
 
-    // CustomElement (HTMLElement)
-    needs.custom = setValidType(
-      options,              // target object where we store
-      newOptions,           // input options
-      'customElement',      // property name in newOptions
-      'string',             // expected JS type
-      null,                 // internal option name (null means same as propName)
-      null,                 // index (not needed)
-      null,                 // default value (no default)
-    function(value) { return value instanceof HTMLElement; } // extra validation
-    ) || needs.custom;
 
     // label
     ['startLabel', 'endLabel', 'middleLabel'].forEach(function(optionName, i) {
@@ -3368,10 +3355,14 @@
    * @param {Object} [options] - Initial options.
    */
   function LeaderLine(start, end, customElement, options) {
+let leaderLineParentDivId  = '';
+    if(customElement !== undefined) {
+      leaderLineParentDivId = customElement;
+    }
     var props = {
       // Initialize properties as array.
       options: {anchorSE: [], socketSE: [], socketGravitySE: [], plugSE: [], plugColorSE: [], plugSizeSE: [],
-        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', ''], customElement: null},
+        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', ''], customElement: leaderLineParentDivId},
       optionIsAttach: {anchorSE: [false, false], labelSEM: [false, false, false]},
       curStats: {}, aplStats: {}, attachments: [], events: {}, reflowTargets: []
     };
@@ -3404,10 +3395,6 @@
       if (end) { options.end = end; }
     }
 
-    if(customElement !== null) {
-      options = copyTree(options);
-      options.customElement = customElement;
-    }
     props.isShown = props.aplStats.show_on = !options.hide; // isShown is applied in setOptions -> bindWindow
     this.setOptions(options);
 
