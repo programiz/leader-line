@@ -1109,10 +1109,14 @@
     } else if (!props.isShown) {
       svg.style.visibility = 'hidden';
     }
-
-    baseDocument.body.appendChild(svg);
-
-    // label (after appendChild(svg), bBox is used)
+    
+    if(props.options.customElement.length > 0) { 
+      var elementFromParent = document.getElementById(props.options.customElement);
+      elementFromParent.appendChild(svg)
+    } else {
+      baseDocument.body.appendChild(svg);
+    }
+    
     [0, 1, 2].forEach(function(i) {
       var label = props.options.labelSEM[i], attachProps;
       if (label && isAttachment(label, 'label')) {
@@ -2500,7 +2504,7 @@
       plugOutlineEnabledSE    startPlugOutline, endPlugOutline
       plugOutlineColorSE      startPlugOutlineColor, endPlugOutlineColor
       plugOutlineSizeSE       startPlugOutlineSize, endPlugOutlineSize
-      labelSEM                startLabel, endLabel, middleLabel
+      labelSEM                startLabel, endLabel, middleLabelanchorSE 
     */
     var options = props.options,
       newWindow, needsWindow, needs = {};
@@ -2679,6 +2683,7 @@
         null, 'plugOutlineSizeSE', i, DEFAULT_OPTIONS.plugOutlineSizeSE[i],
         function(value) { return value >= 1; }) || needs.plugOutline;
     });
+
 
     // label
     ['startLabel', 'endLabel', 'middleLabel'].forEach(function(optionName, i) {
@@ -3349,11 +3354,15 @@
    * @param {Element} [end] - Alternative to `options.end`.
    * @param {Object} [options] - Initial options.
    */
-  function LeaderLine(start, end, options) {
+  function LeaderLine(start, end, customElement, options) {
+let leaderLineParentDivId  = '';
+    if(customElement !== undefined) {
+      leaderLineParentDivId = customElement;
+    }
     var props = {
       // Initialize properties as array.
       options: {anchorSE: [], socketSE: [], socketGravitySE: [], plugSE: [], plugColorSE: [], plugSizeSE: [],
-        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', '']},
+        plugOutlineEnabledSE: [], plugOutlineColorSE: [], plugOutlineSizeSE: [], labelSEM: ['', '', ''], customElement: leaderLineParentDivId},
       optionIsAttach: {anchorSE: [false, false], labelSEM: [false, false, false]},
       curStats: {}, aplStats: {}, attachments: [], events: {}, reflowTargets: []
     };
@@ -3385,8 +3394,10 @@
       if (start) { options.start = start; }
       if (end) { options.end = end; }
     }
+
     props.isShown = props.aplStats.show_on = !options.hide; // isShown is applied in setOptions -> bindWindow
     this.setOptions(options);
+
   }
 
   (function() {
@@ -3432,7 +3443,7 @@
           get: function() {
             var value = // Don't use closure.
                 i != null ? insProps[this._id].options[optionName][i] :
-                optionName ? insProps[this._id].options[optionName] :
+              optionName ? insProps[this._id].options[optionName] :
                 insProps[this._id].options[propName],
               key;
             return !value ? KEYWORD_AUTO :
@@ -3773,7 +3784,9 @@
         attachProps.path.style.fill = attachProps.fill || 'none';
         attachProps.isShown = false;
         svg.style.visibility = 'hidden';
+
         baseDocument.body.appendChild(svg);
+
         setupWindow((window = baseDocument.defaultView));
         attachProps.bodyOffset = getBodyOffset(window); // Get `bodyOffset`
 
