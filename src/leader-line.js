@@ -97,7 +97,11 @@
     IS_EDGE = '-ms-scroll-limit' in document.documentElement.style &&
       '-ms-ime-align' in document.documentElement.style && !window.navigator.msPointerEnabled,
     IS_TRIDENT = !IS_EDGE && !!document.uniqueID, // Future Edge might support `document.uniqueID`.
-    IS_GECKO = 'MozAppearance' in document.documentElement.style,
+    // Some recent Gecko builds no longer expose `MozAppearance` on `CSSStyleDeclaration`
+    // (it's being phased out in favor of the unprefixed `appearance` property), so fall
+    // back to sniffing the `Gecko/<version>` UA token that only real Gecko engines send.
+    IS_GECKO = 'MozAppearance' in document.documentElement.style ||
+      (/\bGecko\/\d/.test(window.navigator.userAgent) && !window.chrome),
     IS_BLINK = !IS_EDGE && !IS_GECKO && // Edge has `window.chrome`, and future Gecko might have that.
       !!window.chrome && !!window.CSS,
     IS_WEBKIT = !IS_EDGE && !IS_TRIDENT &&
@@ -2076,12 +2080,25 @@
       var value;
       if ((value = curBBox[boxKey]) !== aplBBox[boxKey]) {
         traceLog.add(boxKey); // [DEBUG/]
-        viewBox[boxKey] = aplBBox[boxKey] = value;
+        if (IS_GECKO && (boxKey === 'x' || boxKey === 'y')) {
+          // [GECKO] Resolving the CTM for `<use>`-referenced content (how this
+          // library composes the line body/caps/plugs-face) double-counts a
+          // non-zero `viewBox` origin. Keep the origin at 0 and move the same
+          // shift into a `transform` on `props.face` instead, so the origin is
+          // only ever applied once.
+          viewBox[boxKey] = aplBBox[boxKey] = 0;
+        } else {
+          viewBox[boxKey] = aplBBox[boxKey] = value;
+        }
         styles[BBOX_PROP[boxKey]] = value +
           (boxKey === 'x' || boxKey === 'y' ? props.bodyOffset[boxKey] : 0) + 'px';
         updated = true;
       }
     });
+
+    if (IS_GECKO && updated) {
+      props.face.setAttribute('transform', 'translate(' + -curBBox.x + ',' + -curBBox.y + ')');
+    }
 
     if (!updated) { traceLog.add('not-updated'); } // [DEBUG/]
     traceLog.add('</updateViewBox>'); // [DEBUG/]
