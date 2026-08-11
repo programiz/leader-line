@@ -795,6 +795,15 @@
     viewBox.width = bBox.width;
     viewBox.height = bBox.height;
 
+    if (IS_GECKO) {
+      // [GECKO] Assigning to `SVGAnimatedRect.baseVal` properties on a `<marker>`
+      // that never had a `viewBox` attribute doesn't reflect it to the DOM, so
+      // the marker content (the plug/arrowhead shape) renders unscaled instead
+      // of fit to `markerWidth`/`markerHeight`. Force it via `setAttribute`.
+      marker.setAttribute('viewBox',
+        viewBox.x + ' ' + viewBox.y + ' ' + viewBox.width + ' ' + viewBox.height);
+    }
+
     // [TRIDENT] markerOrient is not updated when plugSE is changed
     if (IS_TRIDENT) { forceReflowAdd(props, marked); }
   }
